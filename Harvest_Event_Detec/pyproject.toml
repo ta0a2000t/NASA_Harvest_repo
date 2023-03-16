@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "Harvest_Event_Detec"
+version = "0.1.0"
+description = ""
+authors = ["Taha Al Nufaili <55326983+ta0a2000t@users.noreply.github.com>"]
+
+[tool.poetry.dependencies]
+python = ">=3.9.0,<3.12"
+earthengine-api = "^0.1.344"
+ipykernel = "^6.21.3"
+folium = "^0.14.0"
+tensorflow = "^2.11.0"
+
+[tool.poetry.dev-dependencies]
+pytest = "^5.2"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
