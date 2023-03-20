@@ -11,6 +11,7 @@ ipykernel = "^6.21.3"
 folium = "^0.14.0"
 tensorflow = "^2.11.0"
 visualize = "^0.5.1"
+geopandas = "^0.12.2"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
