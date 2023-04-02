@@ -13,6 +13,9 @@ tensorflow = "^2.11.0"
 visualize = "^0.5.1"
 geopandas = "^0.12.2"
 seaborn = "^0.12.2"
+scikit-learn = "^1.2.2"
+ipympl = "^0.9.3"
+distinctipy = "^1.2.2"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
