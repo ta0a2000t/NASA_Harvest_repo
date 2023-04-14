@@ -25,6 +25,9 @@ def add_veg_indices(df:pd.DataFrame) -> list([str]):
     B7 =  df['B7']
     B8 =  df['B8']
 
+    B11 =  df['B11']
+    B12 = df['B12']
+
 
 
     # https://www.hindawi.com/journals/js/2017/1353691/
@@ -74,7 +77,7 @@ def add_veg_indices(df:pd.DataFrame) -> list([str]):
     #name = 'S2REP'
     #df.loc[:, name] = 705 + 35 * ((B4 + B7)/2) - B5 / (B6 - B5)
     #addedColNames.append(name)
-    
+    """
     name = 'IRECI'
     df.loc[:, name] = (B7 - B4) / (B5 / B6)
     addedColNames.append(name)
@@ -103,10 +106,59 @@ def add_veg_indices(df:pd.DataFrame) -> list([str]):
     name = 'EVI'
     df.loc[:, name] = 2.5 * ((B8 - B4) / (B8 + 6 * B4 - 7.5 * B2 + 1))
     addedColNames.append(name)
+    """
 
     #####
     # unused source: https://www.indexdatabase.de/db/is.php?sensor_id=96
 
+
+
+    # NDTI=(R1610−R2200)/(R1610+R2200)
+    name = 'NDTI'
+    df.loc[:, name] = (B11 - B12)/(B11 + B12)
+    addedColNames.append(name)
+
+    #https://giscrack.com/list-of-spectral-indices-for-sentinel-and-landsat/
+    # NDMI (Sentinel 2) = (B8 – B11) / (B8 + B11)
+    name = 'NDMI'
+    df.loc[:, name] =(B8 - B11) / (B8 + B11)
+    addedColNames.append(name)
+
+    #MSI (Sentinel 2) = B11 / B08
+    name = 'MSI'
+    df.loc[:, name] = B11 / B8
+    addedColNames.append(name)
+
+    # GCI = (NIR) / (Green) – 1
+    name = 'GCI'
+    df.loc[:, name] = (B8 / B3) -1
+    addedColNames.append(name)
+
+    #NBRI (Sentinel 2) = (B8 – B12) / (B8 + B12)
+    name = 'NBRI'
+    df.loc[:, name] = (B8 - B12) / (B8 + B12)
+    addedColNames.append(name)
+
+    #BSI = ((Red+SWIR) – (NIR+Blue)) / ((Red+SWIR) + (NIR+Blue))
+    # BSI (Sentinel 2) = ((B11 + B4) – (B8 + B2)) / ((B11 + B4) + (B8 + B2))
+    name = 'BSI'
+    df.loc[:, name] =  ((B11 + B4) - (B8 + B2)) / ((B11 + B4) + (B8 + B2))
+    addedColNames.append(name)
+
+
+    #NDWI (Sentinel 2) = (B3 – B8) / (B3 + B8)
+    name = 'NDWI'
+    df.loc[:, name] =  (B3 - B8) / (B3 + B8)
+    addedColNames.append(name)
+
+    # NDSI (Sentinel 2) = (B3 – B11) / (B3 + B11)
+    name = 'NDSI'
+    df.loc[:, name] = (B3 - B11) / (B3 + B11)
+    addedColNames.append(name)
+
+
+
+    
 
     print('Added: ', addedColNames)
 
