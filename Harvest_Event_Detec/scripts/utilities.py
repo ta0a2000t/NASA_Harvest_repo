@@ -37,3 +37,17 @@ def saveFigsAsPDF(figs:list([matplotlib.figure.Figure]), filename:str):
         fig.savefig(pp, format='pdf')
     pp.close()
     print(filename,"  saved!")
+
+
+
+# TODO add differences between other metrics too.
+# TODO normalize
+# TODO add back non-harvested samples
+# TODO quantify saparation for each index/and diff
+# TODO look up class balancing techniques(bc we would have a lot of non-harvested and only ~366 harvested labels)
+
+
+# TODO possibly do CNN
+# TODO ANN network
+# TODO one-d CNN
+
