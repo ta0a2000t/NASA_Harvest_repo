@@ -2,6 +2,7 @@ import matplotlib
 from matplotlib.backends.backend_pdf import PdfPages
 
 import numpy as np
+import pandas as pd
 
 def rmved_outliers_iqr(arrayIn: np.array, retBools:bool=False):
     """returns a copy of arrayIn where outliers(shown in box plots) are set to nan
@@ -38,7 +39,13 @@ def saveFigsAsPDF(figs:list([matplotlib.figure.Figure]), filename:str):
     pp.close()
     print(filename,"  saved!")
 
-
+def sort_by_points_images(df:pd.DataFrame) -> None:
+    df['pt_idx'] = df.point_idx.apply(lambda x: int(x[1:]))
+    df['img_idx'] = df.image_idx.apply(lambda x: int(x[1:]))
+    df.sort_values(by=['pt_idx'], ascending=True)
+    df.sort_values(by=['img_idx'], ascending=True)
+    # sorted now
+    
 
 # TODO add differences between other metrics too.
 # TODO normalize
@@ -51,3 +58,7 @@ def saveFigsAsPDF(figs:list([matplotlib.figure.Figure]), filename:str):
 # TODO ANN network
 # TODO one-d CNN
 
+def nan_arr(length:int) -> np.array:
+    arr = np.zeros(length)
+    arr[:] = np.nan
+    return arr

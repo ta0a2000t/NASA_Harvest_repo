@@ -2,6 +2,9 @@ import pandas as pd
 import numpy as np
 import math
 
+# local
+from scripts import utilities
+
 
 
 def add_veg_indices(df:pd.DataFrame) -> list([str]):
@@ -166,11 +169,51 @@ def add_veg_indices(df:pd.DataFrame) -> list([str]):
     # TODO read about indices
     # TODO google "metric for seperation", then label each index with a metric for separability between harv_evnt
     # vegetation 
-    return addedColNames
+    return addedColNames # aka VEG_INDICES_NAMES
 
     
 
+def add_veg_diff(df, VEG_INDICES_NAMES)->pd.DataFrame:
+    utilities.sort_by_points_images(df)
+    
+    result_df = None
+    for image_idx in df.image_idx.unique():
+        curr_image_df = df[df.image_idx == image_idx]
+        
+        prev_col = None
+        for name in VEG_INDICES_NAMES:
+            
+            curr_col = curr_image_df[name]
+            
+            if(type(prev_col) != type(None)):
+                diff_col = curr_col - prev_col
+            else:
+                diff_col = utilities.nan_arr(curr_image_df.shape[0])
+            
+            curr_image_df.loc[:, name+'_diff'] = diff_col
+            
+            prev_col = curr_col
+    
+        if(type(result_df) != type(None)):
+            curr_image_df['sample_idx'] = 's' + str(int(image_idx[1:]) - 1)
+            result_df = pd.concat([result_df, curr_image_df])
+            
+        else:
+            curr_image_df['sample_idx'] = utilities.nan_arr(curr_image_df.shape[0])
+            result_df = curr_image_df
+            
 
+            
+    veg_diff_names = []
+    for name in VEG_INDICES_NAMES:
+        curr_name = name + '_diff'
+        veg_diff_names.append(curr_name)
+        df[curr_name] = result_df[curr_name]
+    df['sample_idx'] = result_df['sample_idx']
+    
+    print('Added: ', ['sample_idx'] + veg_diff_names)
+    return veg_diff_names
+    
 
 
 
