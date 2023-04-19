@@ -55,8 +55,6 @@ def add_veg_indices(df:pd.DataFrame) -> list([str]):
     name = 'PSSRa'
     df.loc[:, name] = (Red_Edge_3) / (Red)
     addedColNames.append(name)
-
-
     """
 
 
@@ -165,8 +163,6 @@ def add_veg_indices(df:pd.DataFrame) -> list([str]):
 
     print('Added: ', addedColNames)
 
-    # TODO add indices with B11 & B12
-    # TODO read about indices
     # TODO google "metric for seperation", then label each index with a metric for separability between harv_evnt
     # vegetation 
     return addedColNames # aka VEG_INDICES_NAMES

@@ -5,6 +5,11 @@ import numpy as np
 import pandas as pd
 import math
 
+from sklearn.metrics import mean_absolute_error
+from sklearn.metrics import mean_squared_error
+from sklearn.metrics.pairwise import cosine_similarity
+from scipy.spatial.distance import euclidean
+
 def rmved_outliers_iqr(arrayIn: np.array, retBools:bool=False):
     """returns a copy of arrayIn where outliers(shown in box plots) are set to nan
 
@@ -45,8 +50,8 @@ def saveFigsAsPDF(figs:list([matplotlib.figure.Figure]), filename:str):
 def sort_by_points_images(df:pd.DataFrame) -> None:
     df['pt_idx'] = df.point_idx.apply(lambda x: int(x[1:]))
     df['img_idx'] = df.image_idx.apply(lambda x: int(x[1:]))
-    df.sort_values(by=['pt_idx'], ascending=True)
-    df.sort_values(by=['img_idx'], ascending=True)
+    df = df.sort_values(by=['pt_idx'], ascending=True)
+    df = df.sort_values(by=['img_idx'], ascending=True)
     # sorted now
     
 
@@ -98,15 +103,17 @@ def downsample(arr, length) -> np.array:
     indices = np.random.choice(len(arr), length, replace=False)
     return np.take(arr, indices)
 
-def get_Bhattacharyya_coefficient(arr1:np.array, arr2:np.array, num_buckets=50):
+def get_Bhattacharyya_coef(arr1:np.array, arr2:np.array, num_buckets=50):
     def bhattacharyya(h1, h2):
         # credit: https://gist.github.com/3rd3 https://gist.github.com/jstadler/c47861f3d86c40b82d4c
         '''Calculates the Byattacharyya distance of two histograms.'''
 
         def normalize(h):
+            if(np.sum(h) == 0):
+                return h
             return h / np.sum(h)
 
-        return 1 - np.sum(np.sqrt(np.multiply(normalize(h1), normalize(h2))))
+        return -np.log(np.sum(np.sqrt(np.multiply(normalize(h1), normalize(h2)))))
 
     hist1, _ = np.histogram(arr1, bins = num_buckets)
     hist2, _ = np.histogram(arr2, bins = num_buckets)
@@ -114,8 +121,42 @@ def get_Bhattacharyya_coefficient(arr1:np.array, arr2:np.array, num_buckets=50):
     return bhattacharyya(hist1, hist2)
     
 
+def get_MAE_coef(arr1:np.array, arr2:np.array):
+    length = min(len(arr1), len(arr2))
+    if(length == 0):
+        return None
+    return mean_absolute_error(downsample(arr1, length), downsample(arr2, length))
+
+def get_RMSE_coef(arr1:np.array, arr2:np.array):
+    length = min(len(arr1), len(arr2))
+    if(length == 0):
+        return None
+    return np.sqrt(mean_squared_error(downsample(arr1, length), downsample(arr2, length)))
+def get_cosine_similarity_coef(arr1:np.array, arr2:np.array):
+    length = min(len(arr1), len(arr2))
+    if(length == 0):
+        return None
+    arr1, arr2, = downsample(arr1, length), downsample(arr2, length)
     
+    return cosine_similarity(np.reshape(arr1, (1, -1)), np.reshape(arr2, (1, -1)))[0][0]
+
+def get_euclidean_dist(arr1:np.array, arr2:np.array):
+    length = min(len(arr1), len(arr2))
+    if(length == 0):
+        return None
+    return euclidean(downsample(arr1, length), downsample(arr2, length))
 
     
+def get_Hellinger_distance(arr1:np.array, arr2:np.array, num_buckets=50):
+    def Hellinger_distance(h1, h2):
+        '''Calculates the Hellinger distance of two histograms.'''
+
+        def normalize(h):
+            return h / np.sum(h)
+
+        return 1 - np.sum(np.sqrt(np.multiply(normalize(h1), normalize(h2))))
     
+    hist1, _ = np.histogram(arr1, bins = num_buckets)
+    hist2, _ = np.histogram(arr2, bins = num_buckets)
     
+    return Hellinger_distance(hist1, hist2)
