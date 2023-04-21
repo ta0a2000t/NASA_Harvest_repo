@@ -1,9 +1,11 @@
 import matplotlib
 from matplotlib.backends.backend_pdf import PdfPages
+from distinctipy import distinctipy # get n distinct colors
 
 import numpy as np
 import pandas as pd
 import math
+import scipy
 
 from sklearn.metrics import mean_absolute_error
 from sklearn.metrics import mean_squared_error
@@ -103,9 +105,8 @@ def downsample(arr, length) -> np.array:
     indices = np.random.choice(len(arr), length, replace=False)
     return np.take(arr, indices)
 
-def get_Bhattacharyya_coef(arr1:np.array, arr2:np.array, num_buckets=50):
+def get_Bhattacharyya_coef(arr1:np.array, arr2:np.array, num_buckets=50) -> float:
     def bhattacharyya(h1, h2):
-        # credit: https://gist.github.com/3rd3 https://gist.github.com/jstadler/c47861f3d86c40b82d4c
         '''Calculates the Byattacharyya distance of two histograms.'''
 
         def normalize(h):
@@ -121,18 +122,18 @@ def get_Bhattacharyya_coef(arr1:np.array, arr2:np.array, num_buckets=50):
     return bhattacharyya(hist1, hist2)
     
 
-def get_MAE_coef(arr1:np.array, arr2:np.array):
+def get_MAE_coef(arr1:np.array, arr2:np.array)-> float:
     length = min(len(arr1), len(arr2))
     if(length == 0):
         return None
     return mean_absolute_error(downsample(arr1, length), downsample(arr2, length))
 
-def get_RMSE_coef(arr1:np.array, arr2:np.array):
+def get_RMSE_coef(arr1:np.array, arr2:np.array) -> float:
     length = min(len(arr1), len(arr2))
     if(length == 0):
         return None
     return np.sqrt(mean_squared_error(downsample(arr1, length), downsample(arr2, length)))
-def get_cosine_similarity_coef(arr1:np.array, arr2:np.array):
+def get_cosine_similarity_coef(arr1:np.array, arr2:np.array) -> float:
     length = min(len(arr1), len(arr2))
     if(length == 0):
         return None
@@ -140,7 +141,7 @@ def get_cosine_similarity_coef(arr1:np.array, arr2:np.array):
     
     return cosine_similarity(np.reshape(arr1, (1, -1)), np.reshape(arr2, (1, -1)))[0][0]
 
-def get_euclidean_dist(arr1:np.array, arr2:np.array):
+def get_euclidean_dist(arr1:np.array, arr2:np.array) -> float:
     length = min(len(arr1), len(arr2))
     if(length == 0):
         return None
@@ -160,3 +161,72 @@ def get_Hellinger_distance(arr1:np.array, arr2:np.array, num_buckets=50):
     hist2, _ = np.histogram(arr2, bins = num_buckets)
     
     return Hellinger_distance(hist1, hist2)
+
+def get_JSD_distance(arr1:np.array, arr2:np.array, num_buckets=50) -> float:
+    """
+        Jensen-Shannon Divergence (JSD): 
+        This is a distance metric that measures 
+        the similarity between two probability distributions. 
+        The JSD is symmetric and bounded between 0 and 1, where 0 indicates 
+        that the two distributions are identical, and 1 indicates that 
+        they have no overlap. 
+        
+    """
+    def KL(A: np.array, M: np.array):
+        """         
+        Kullback-Leibler divergence 
+        A represents the data, the observations, or a measured probability distribution. 
+
+        Distribution M represents instead a theory, a model.
+        https://en.wikipedia.org/wiki/Kullback%E2%80%93Leibler_divergence
+        """
+
+
+        return np.sum(np.multiply(A, np.log(np.divide(A, M))))
+
+
+    def JSD_distance(hist_P: np.array, hist_Q: np.array)-> float:
+        '''Calculates the JSD distance of two distributions.
+
+            https://en.wikipedia.org/wiki/Jensen%E2%80%93Shannon_divergence
+        '''
+        
+        def normalize(h):
+            return h / np.sum(h)
+        hist_P, hist_Q = normalize(hist_P), normalize(hist_Q)
+
+        #M is the average distribution of P and Q.
+        M = 0.5 * (hist_P + hist_Q)
+
+        return 0.5 * KL(hist_P, M) + 0.5 * KL(hist_Q, M)
+
+
+    
+    hist1, _ = np.histogram(arr1, bins = num_buckets)
+    hist2, _ = np.histogram(arr2, bins = num_buckets)
+
+    return JSD_distance(hist1, hist2)
+
+def get_K_S_Test(arr1:np.array, arr2:np.array) -> float:
+    """
+        Two-sample Kolmogorov–Smirnov test
+
+        https://en.wikipedia.org/wiki/Kolmogorov%E2%80%93Smirnov_test
+    """
+    if(min(len(arr1), len(arr2)) == 0):
+        return None
+
+    return scipy.stats.kstest(arr1, arr2).pvalue
+
+
+
+    
+def get_classes_colors(NUMERIC_COLS:list([str]))-> dict:
+    names = sorted(NUMERIC_COLS)
+    colors = distinctipy.get_colors(len(names))
+
+    dic = {}
+    for i in range(len(names)):
+        name = names[i]
+        dic[name] = colors[i]
+    return dic

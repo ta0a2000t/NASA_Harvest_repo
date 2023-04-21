@@ -11,7 +11,8 @@ pd.options.mode.chained_assignment = None  # default='warn'
 
 from scripts import utilities
 
-def get_fig_seperability_coef(coef_function, df: pd.DataFrame, col_names: list[str], title: str) -> plt.figure:
+
+def get_fig_seperability_coef(coef_function, colors_dic: dict, df: pd.DataFrame, col_names: list[str], title: str) -> plt.figure:
     
     har_df = df[df.har_evnt]
     not_har_df = df[df.har_evnt == False]
@@ -22,59 +23,85 @@ def get_fig_seperability_coef(coef_function, df: pd.DataFrame, col_names: list[s
 
         # remove nan values
         arr1, arr2 = arr1[~np.isnan(arr1)], arr2[~np.isnan(arr2)]
-
+        if(min(len(arr1), len(arr2)) == 0):
+            continue
         coef = coef_function(arr1, arr2)
-        
-        y.append(coef)
-        x.append(name)
+        if(type(coef) != type(None) and type(coef) != type(np.nan)):
+            y.append(coef)
+            x.append(name)
+    if(len(y) == 0):
+        return None
 
     plotting_df = pd.DataFrame({"class": np.array(x), "value": np.array(y).astype(float)})
     plotting_df = plotting_df.sort_values(by=['value'], ascending=True)
     fig = plt.figure(figsize=(16,len(col_names)))
-    sns.barplot(plotting_df, x='value', y='class').set_title(title)
+    colors = []
+    for name in x:
+        colors.append(colors_dic[name])
+
+    sns.barplot(plotting_df, x='value', y='class', palette=colors).set_title(title)
+    ax = plt.gca()
+    for i in ax.containers:
+        ax.bar_label(i,)
+
     plt.close()
 
     return fig
 
 
 
-def plot_per_period(df: pd.DataFrame, col_names: list[str], filename: str, metric:int):
+def plot_per_period(colors_dic: dict, df: pd.DataFrame, col_names: list[str], filename: str, metric:int):
     """ 
     filename example: "../plots/box_plots/everything_trimmed_standarized.pdf"
     
-    metric: 0 -> Bhattacharyya
-        1 -> Hellinger Distance
-        2 -> Root Mean Squared Error (RMSE)
-        3 -> Cosine Similarity
-        4 -> Euclidean Distance
-        5 -> Mean Absolute Error (MAE)
+    metric: 
+        0 -> Bhattacharyya \n
+        1 -> Hellinger Distance \n
+        2 -> Two-sample Kolmogorov–Smirnov test \n
+        3 -> Jensen-Shannon Divergence (JSD) \n
+        __________ \n
+        NOTUSED \n
+        4 -> Euclidean Distance \n
+        5 -> Mean Absolute Error (MAE) \n
+        6 -> Root Mean Squared Error (RMSE) \n
+        7 -> Cosine Similarity \n
 
     """
-    coef_function = None
-    title = "NO TITLE"
-    if metric == 0:
-        coef_function = utilities.get_Bhattacharyya_coef
-        title = "Bhattacharyya"
-    elif metric == 1:
-        coef_function = utilities.get_Hellinger_distance
-        title = "Hellinger Distance"
-    elif metric == 2:
-        coef_function = utilities.get_RMSE_coef
-        title = "Root Mean Squared Error (RMSE)"
-    elif metric == 3:
-        coef_function = utilities.get_cosine_similarity_coef
-        title = "Cosine Similarity"
+    # ["Euclidean Distance", "Mean Absolute Error (MAE)", , "Root Mean Squared Error (RMSE)", "Cosine Similarity"]
+    titles = [ "Bhattacharyya", "Hellinger Distance", 
+                "Two-sample Kolmogorov–Smirnov test", "Jensen-Shannon Divergence (JSD)"]
+    functions = [ utilities.get_Bhattacharyya_coef, utilities.get_Hellinger_distance, 
+                utilities.get_K_S_Test, utilities.get_JSD_distance]
+    title = titles[metric]
+    coef_function = functions[metric]
+
+    """ NOT USED
     elif metric == 4:
         coef_function = utilities.get_euclidean_dist
         title = "Euclidean Distance"
     elif metric == 5:
         coef_function = utilities.get_MAE_coef
         title = "Mean Absolute Error (MAE)"
+    elif metric == 6:
+        coef_function = utilities.get_RMSE_coef
+        title = "Root Mean Squared Error (RMSE)"
+    elif metric == 7:
+        coef_function = utilities.get_cosine_similarity_coef
+        title = "Cosine Similarity"
+    """
     pp = PdfPages(filename)
     for sampleIdx in df.sample_idx.unique():
         curr_df = df[df.sample_idx == sampleIdx]
-        fig = get_fig_seperability_coef(coef_function, df, col_names, title=(title +' | ' + str(sampleIdx)))
-        
+        fig = get_fig_seperability_coef(coef_function,colors_dic, df, col_names, title=(title +' | ' + str(sampleIdx)))
+        if(type(fig) == type(None)):
+            continue
         fig.savefig(pp, format='pdf')
         plt.close() # closing figure
     pp.close()
+
+
+
+    
+
+
+    
