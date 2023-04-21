@@ -116,6 +116,7 @@ def get_Bhattacharyya_coef(arr1:np.array, arr2:np.array, num_buckets=50) -> floa
 
         return -np.log(np.sum(np.sqrt(np.multiply(normalize(h1), normalize(h2)))))
 
+    # TODO specify range
     hist1, _ = np.histogram(arr1, bins = num_buckets)
     hist2, _ = np.histogram(arr2, bins = num_buckets)
     
