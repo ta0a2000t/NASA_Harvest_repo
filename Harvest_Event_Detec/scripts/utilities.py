@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 import math
 import scipy
+from scipy.stats import norm
 
 from sklearn.metrics import mean_absolute_error
 from sklearn.metrics import mean_squared_error
@@ -100,12 +101,21 @@ def get_rmved_outliers(df:pd.DataFrame, NUMERIC_COLS: list[str], standarize:bool
             res_df = pd.concat([res_df, curr_df])
     return res_df
 
+def _get_hists(arr1:np.array, arr2:np.array, num_buckets=50):
+    minn = min(np.min(arr1), np.min(arr2))
+    maxx = max(np.max(arr1), np.max(arr2))
+    if(minn == np.nan):
+        print(arr1, arr2, "______________________")
+    hist1, _ = np.histogram(arr1, bins = num_buckets, range=(minn, maxx))
+    hist2, _ = np.histogram(arr2, bins = num_buckets, range=(minn, maxx))
+
+    return norm.pdf(hist1), norm.pdf(hist2)
 
 def downsample(arr, length) -> np.array:
     indices = np.random.choice(len(arr), length, replace=False)
     return np.take(arr, indices)
 
-def get_Bhattacharyya_coef(arr1:np.array, arr2:np.array, num_buckets=50) -> float:
+def get_Bhattacharyya_coef(arr1:np.array, arr2:np.array) -> float:
     def bhattacharyya(h1, h2):
         '''Calculates the Byattacharyya distance of two histograms.'''
 
@@ -116,10 +126,9 @@ def get_Bhattacharyya_coef(arr1:np.array, arr2:np.array, num_buckets=50) -> floa
 
         return -np.log(np.sum(np.sqrt(np.multiply(normalize(h1), normalize(h2)))))
 
-    # TODO specify range
-    hist1, _ = np.histogram(arr1, bins = num_buckets)
-    hist2, _ = np.histogram(arr2, bins = num_buckets)
     
+    hist1, hist2 = _get_hists(arr1, arr2)
+
     return bhattacharyya(hist1, hist2)
     
 
@@ -158,12 +167,11 @@ def get_Hellinger_distance(arr1:np.array, arr2:np.array, num_buckets=50):
 
         return 1 - np.sum(np.sqrt(np.multiply(normalize(h1), normalize(h2))))
     
-    hist1, _ = np.histogram(arr1, bins = num_buckets)
-    hist2, _ = np.histogram(arr2, bins = num_buckets)
+    hist1, hist2 = _get_hists(arr1, arr2)
     
     return Hellinger_distance(hist1, hist2)
 
-def get_JSD_distance(arr1:np.array, arr2:np.array, num_buckets=50) -> float:
+def get_JSD_distance(arr1:np.array, arr2:np.array) -> float:
     """
         Jensen-Shannon Divergence (JSD): 
         This is a distance metric that measures 
@@ -182,9 +190,7 @@ def get_JSD_distance(arr1:np.array, arr2:np.array, num_buckets=50) -> float:
         https://en.wikipedia.org/wiki/Kullback%E2%80%93Leibler_divergence
         """
 
-
-        return np.sum(np.multiply(A, np.log(np.divide(A, M))))
-
+        return np.sum(np.where(A != 0, np.multiply(A, np.log(np.divide(A, M))), 0))
 
     def JSD_distance(hist_P: np.array, hist_Q: np.array)-> float:
         '''Calculates the JSD distance of two distributions.
@@ -198,13 +204,14 @@ def get_JSD_distance(arr1:np.array, arr2:np.array, num_buckets=50) -> float:
 
         #M is the average distribution of P and Q.
         M = 0.5 * (hist_P + hist_Q)
+        #print(M, "<----",  np.divide(hist_P, M))
 
         return 0.5 * KL(hist_P, M) + 0.5 * KL(hist_Q, M)
 
 
     
-    hist1, _ = np.histogram(arr1, bins = num_buckets)
-    hist2, _ = np.histogram(arr2, bins = num_buckets)
+    hist1, hist2 = _get_hists(arr1, arr2)
+
 
     return JSD_distance(hist1, hist2)
 
@@ -214,10 +221,8 @@ def get_K_S_Test(arr1:np.array, arr2:np.array) -> float:
 
         https://en.wikipedia.org/wiki/Kolmogorov%E2%80%93Smirnov_test
     """
-    if(min(len(arr1), len(arr2)) == 0):
-        return None
-
-    return scipy.stats.kstest(arr1, arr2).pvalue
+    hist1, hist2 = _get_hists(arr1, arr2)
+    return scipy.stats.kstest(hist1, hist2).pvalue
 
 
 

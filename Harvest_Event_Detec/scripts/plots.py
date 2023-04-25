@@ -18,8 +18,8 @@ def get_fig_seperability_coef(coef_function, colors_dic: dict, df: pd.DataFrame,
     not_har_df = df[df.har_evnt == False]
     y, x = [], []
     for name in col_names:
-        arr1 = har_df[name]
-        arr2 = not_har_df[name]
+        arr1 = har_df[name].to_numpy()
+        arr2 = not_har_df[name].to_numpy()
 
         # remove nan values
         arr1, arr2 = arr1[~np.isnan(arr1)], arr2[~np.isnan(arr2)]
@@ -35,8 +35,8 @@ def get_fig_seperability_coef(coef_function, colors_dic: dict, df: pd.DataFrame,
     plotting_df = pd.DataFrame({"class": np.array(x), "value": np.array(y).astype(float)})
     plotting_df = plotting_df.sort_values(by=['value'], ascending=True)
     fig = plt.figure(figsize=(16,len(col_names)))
-    colors = []
-    for name in x:
+    colors = [] # fixing a color on each class
+    for name in plotting_df["class"].unique():
         colors.append(colors_dic[name])
 
     sns.barplot(plotting_df, x='value', y='class', palette=colors).set_title(title)
@@ -68,8 +68,8 @@ def plot_per_period(colors_dic: dict, df: pd.DataFrame, col_names: list[str], fi
 
     """
     # ["Euclidean Distance", "Mean Absolute Error (MAE)", , "Root Mean Squared Error (RMSE)", "Cosine Similarity"]
-    titles = [ "Bhattacharyya", "Hellinger Distance", 
-                "Two-sample Kolmogorov–Smirnov test", "Jensen-Shannon Divergence (JSD)"]
+    titles = [ "Bhattacharyya Distance (MORE means separate)", "Hellinger Distance (MORE means separate)", 
+                "Two-sample Kolmogorov–Smirnov test P-Value (LESS means separate)", "Jensen-Shannon Divergence (JSD) (LESS means separate)"]
     functions = [ utilities.get_Bhattacharyya_coef, utilities.get_Hellinger_distance, 
                 utilities.get_K_S_Test, utilities.get_JSD_distance]
     title = titles[metric]
@@ -90,9 +90,11 @@ def plot_per_period(colors_dic: dict, df: pd.DataFrame, col_names: list[str], fi
         title = "Cosine Similarity"
     """
     pp = PdfPages(filename)
-    for sampleIdx in df.sample_idx.unique():
+    for sampleIdx in sorted(df.sample_idx.unique()):
+        if(int(sampleIdx[1:]) < 6 or int(sampleIdx[1:]) > 9):
+            continue # based on the box plots, we want sample idx within [6, 9]
         curr_df = df[df.sample_idx == sampleIdx]
-        fig = get_fig_seperability_coef(coef_function,colors_dic, df, col_names, title=(title +' | ' + str(sampleIdx)))
+        fig = get_fig_seperability_coef(coef_function,colors_dic, curr_df, col_names, title=(title +' | ' + str(sampleIdx)))
         if(type(fig) == type(None)):
             continue
         fig.savefig(pp, format='pdf')

@@ -51,11 +51,11 @@ def add_veg_indices(df:pd.DataFrame) -> list([str]):
     #http://www.eo4geo.eu/training/sentinel-2-data-and-vegetation-indices/
     # where: B7 = 783 nm, B6 = 740 nm, B5 = 705 nm, B4 = 665 nm
 
-    """
+    
     name = 'PSSRa'
     df.loc[:, name] = (Red_Edge_3) / (Red)
     addedColNames.append(name)
-    """
+    
 
 
     #df['TNDVI'] = math.sqrt(df['NDVI'] + 0.5)
@@ -78,7 +78,7 @@ def add_veg_indices(df:pd.DataFrame) -> list([str]):
     #name = 'S2REP'
     #df.loc[:, name] = 705 + 35 * ((B4 + B7)/2) - B5 / (B6 - B5)
     #addedColNames.append(name)
-    """
+    
     name = 'IRECI'
     df.loc[:, name] = (B7 - B4) / (B5 / B6)
     addedColNames.append(name)
@@ -90,11 +90,11 @@ def add_veg_indices(df:pd.DataFrame) -> list([str]):
     df.loc[:, name] = (B7/B5) - 1
     addedColNames.append(name)
 
-    """
+    
     name = 'MTCI'
     df.loc[:, name] = (B6 - B5) / (B5 - B4)
     addedColNames.append(name)
-    """
+    
     
     name = 'NDVIre'
     df.loc[:, name] = (B8 - B5) / (B8 + B5)
@@ -107,7 +107,7 @@ def add_veg_indices(df:pd.DataFrame) -> list([str]):
     name = 'EVI'
     df.loc[:, name] = 2.5 * ((B8 - B4) / (B8 + 6 * B4 - 7.5 * B2 + 1))
     addedColNames.append(name)
-    """
+
 
     #####
     # unused source: https://www.indexdatabase.de/db/is.php?sensor_id=96
