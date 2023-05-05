@@ -75,9 +75,6 @@ def add_veg_indices(df:pd.DataFrame) -> list([str]):
 
 
     # same source^. indices with red-edge wavelengths
-    #name = 'S2REP'
-    #df.loc[:, name] = 705 + 35 * ((B4 + B7)/2) - B5 / (B6 - B5)
-    #addedColNames.append(name)
     
     name = 'IRECI'
     df.loc[:, name] = (B7 - B4) / (B5 / B6)

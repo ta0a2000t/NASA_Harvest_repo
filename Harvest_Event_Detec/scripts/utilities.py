@@ -86,15 +86,17 @@ def stretch_cols(df:pd.DataFrame, NUMERIC_COLS: list[str])->pd.DataFrame:
         stretch_numeric_df = pd.concat([stretch_numeric_df, curr_df])
     return stretch_numeric_df
 
-def get_rmved_outliers(df:pd.DataFrame, NUMERIC_COLS: list[str], standarize:bool=False)->pd.DataFrame:
+def get_rm_outlier_standarize(df:pd.DataFrame, NUMERIC_COLS: list[str], standarize:bool=True, rm_outliers:bool=True)->pd.DataFrame:
     res_df = None
     for sample_idx in df.sample_idx.unique():
         curr_df = df[df.sample_idx == sample_idx]
         for numeric_col_name in NUMERIC_COLS:
-            # setting outliers to NaN
-            curr_df[numeric_col_name] = rmved_outliers_iqr(curr_df[numeric_col_name])
+            if(rm_outliers):
+                # setting outliers to NaN
+                curr_df[numeric_col_name] = rmved_outliers_iqr(curr_df[numeric_col_name])
             if(standarize):
                 curr_df[numeric_col_name] = get_standarized_arr(curr_df[numeric_col_name])
+            
         if(type(res_df) == type(None)):
             res_df = curr_df
         else:
