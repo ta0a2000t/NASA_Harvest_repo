@@ -46,7 +46,7 @@ def get_fig_seperability_coef(coef_function, colors_dic: dict, df: pd.DataFrame,
 
     plt.close()
 
-    return fig
+    return fig, plotting_df
 
 
 
@@ -89,17 +89,20 @@ def plot_per_period(colors_dic: dict, df: pd.DataFrame, col_names: list[str], fi
         coef_function = utilities.get_cosine_similarity_coef
         title = "Cosine Similarity"
     """
+    dataframes = {}
     pp = PdfPages(filename)
     for sampleIdx in sorted(df.sample_idx.unique()):
         if(int(sampleIdx[1:]) < 6 or int(sampleIdx[1:]) > 9):
             continue # based on the box plots, we want sample idx within [6, 9]
         curr_df = df[df.sample_idx == sampleIdx]
-        fig = get_fig_seperability_coef(coef_function,colors_dic, curr_df, col_names, title=(title +' | ' + str(sampleIdx)))
+        fig, plotting_df = get_fig_seperability_coef(coef_function,colors_dic, curr_df, col_names, title=(title +' | ' + str(sampleIdx)))
+        dataframes[sampleIdx] = (plotting_df)
         if(type(fig) == type(None)):
             continue
         fig.savefig(pp, format='pdf')
         plt.close() # closing figure
     pp.close()
+    return dataframes
 
 
 
