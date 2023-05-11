@@ -34,10 +34,6 @@ def add_veg_indices(df:pd.DataFrame) -> list([str]):
 
 
     # https://www.hindawi.com/journals/js/2017/1353691/
-    name = 'DVI'
-    df.loc[:, name] = NIR - Red
-    addedColNames.append(name)
-
     name = 'RVI'
     df.loc[:, name] = Red / NIR
     addedColNames.append(name)
