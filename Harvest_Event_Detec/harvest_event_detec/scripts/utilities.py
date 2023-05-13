@@ -80,16 +80,16 @@ def get_standarized_arr(arr: np.array) -> np.array:
     return (arr - mean)/sd
 
 def stretch_cols(df:pd.DataFrame, NUMERIC_COLS: list[str])->pd.DataFrame:
-    stretch_numeric_df = pd.DataFrame({'value':np.array([]), 'class':np.array([]), 'har_evnt': np.array([]), 'sample_idx':np.array([])})
+    stretch_numeric_df = pd.DataFrame({'value':np.array([]), 'class':np.array([]), 'har_evnt': np.array([]), 'image_idx':np.array([])})
     for col_name in NUMERIC_COLS:
-        curr_df = pd.DataFrame({'value': df[col_name], 'class':np.tile(np.array([col_name]), df.shape[0]), 'har_evnt':df['har_evnt'], 'sample_idx':df['sample_idx'], 'start_date':df['start_date']})
+        curr_df = pd.DataFrame({'value': df[col_name], 'class':np.tile(np.array([col_name]), df.shape[0]), 'har_evnt':df['har_evnt'], 'image_idx':df['image_idx'], 'start_date':df['start_date']})
         stretch_numeric_df = pd.concat([stretch_numeric_df, curr_df])
     return stretch_numeric_df
 
 def get_rm_outlier_standarize(df:pd.DataFrame, NUMERIC_COLS: list[str], standarize:bool=True, rm_outliers:bool=True)->pd.DataFrame:
     res_df = None
-    for sample_idx in df.sample_idx.unique():
-        curr_df = df[df.sample_idx == sample_idx]
+    for image_idx in df.image_idx.unique():
+        curr_df = df[df.image_idx == image_idx]
         for numeric_col_name in NUMERIC_COLS:
             if(rm_outliers):
                 # setting outliers to NaN

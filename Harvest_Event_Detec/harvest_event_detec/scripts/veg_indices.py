@@ -5,6 +5,9 @@ import math
 # local
 from scripts import utilities
 
+NUM_OF_3WEEK_IMGS = 17 #[0 - 16]
+def Get_SORTED_SAMPLE_INDICES():
+    return ['i' + str(i) for i in range(NUM_OF_3WEEK_IMGS)]
 
 
 def add_veg_indices(df:pd.DataFrame) -> list([str]):
@@ -150,59 +153,54 @@ def add_veg_indices(df:pd.DataFrame) -> list([str]):
     df.loc[:, name] = (B3 - B11) / (B3 + B11)
     addedColNames.append(name)
 
-
-
-    
-
     print('Added: ', addedColNames)
-
-    # TODO google "metric for seperation", then label each index with a metric for separability between harv_evnt
-    # vegetation 
     return addedColNames # aka VEG_INDICES_NAMES
 
     
-
-def add_veg_diff(df, VEG_INDICES_NAMES)->pd.DataFrame:
+def get_added_veg_diff(df, VEG_INDICES_NAMES)->pd.DataFrame:
     utilities.sort_by_points_images(df)
     
-    result_df = None
-    for image_idx in df.image_idx.unique():
-        curr_image_df = df[df.image_idx == image_idx]
-        
-        prev_col = None
-        for name in VEG_INDICES_NAMES:
-            
-            curr_col = curr_image_df[name]
-            
-            if(type(prev_col) != type(None)):
-                diff_col = curr_col - prev_col
-            else:
-                diff_col = utilities.nan_arr(curr_image_df.shape[0])
-            
-            curr_image_df.loc[:, name+'_diff'] = diff_col
-            
-            prev_col = curr_col
+    # sample 1-16
     
-        if(type(result_df) != type(None)):
-            curr_image_df['sample_idx'] = 's' + str(int(image_idx[1:]) - 1)
-            result_df = pd.concat([result_df, curr_image_df])
-            
-        else:
-            curr_image_df['sample_idx'] = utilities.nan_arr(curr_image_df.shape[0])
-            result_df = curr_image_df
-            
+    curr_veg_idx_df = df
 
-            
-    veg_diff_names = []
-    for name in VEG_INDICES_NAMES:
-        curr_name = name + '_diff'
-        veg_diff_names.append(curr_name)
-        df[curr_name] = result_df[curr_name]
-    df['sample_idx'] = result_df['sample_idx']
+    curr_indices = np.unique(curr_veg_idx_df.image_idx)
     
-    print('Added: ', ['sample_idx'] + veg_diff_names)
-    return veg_diff_names
-    
+    df_list = []
+    for i in range(1, NUM_OF_3WEEK_IMGS):
+        image_idx = Get_SORTED_SAMPLE_INDICES()[i]
+        prev_image_idx = Get_SORTED_SAMPLE_INDICES()[i - 1]
+
+        if(image_idx in curr_indices):
+            curr_idx_df = curr_veg_idx_df[curr_veg_idx_df["image_idx"] == image_idx]
+
+            if (prev_image_idx in curr_indices):
+                prev_idx_df = curr_veg_idx_df[curr_veg_idx_df["image_idx"] == prev_image_idx]    
+                for prev_name in prev_idx_df.columns[:]:
+                    if(prev_name == "point_idx"):
+                        continue
+                    prev_idx_df.rename(columns = {prev_name : "prev_"+ prev_name}, inplace = True)
+                
+                both_df = pd.merge(prev_idx_df, curr_idx_df, how='inner',left_on=['point_idx'],right_on=['point_idx'])
+                curr_idx_df = both_df[curr_idx_df.columns]
+                
+                a_df = both_df[VEG_INDICES_NAMES]
+                b_df = both_df[["prev_" + word for word in VEG_INDICES_NAMES]]
+                for prev_name in b_df.columns[:]:
+                    b_df.rename(columns = {prev_name : prev_name[5:]}, inplace = True)
+                
+                diff_df = a_df - b_df                
+                for prev_name in b_df.columns[:]:
+                    diff_df.rename(columns = {prev_name : prev_name + "_diff"}, inplace = True)
+                curr_idx_df = pd.concat([curr_idx_df, diff_df], axis=1)
+
+                
+                df_list.append(curr_idx_df)
+                
+    veg_diff_names = [word + "_diff" for word in VEG_INDICES_NAMES]
+    print('(not in place), created :', veg_diff_names)
+
+    return pd.concat(df_list, axis=0), veg_diff_names   
 
 
 
