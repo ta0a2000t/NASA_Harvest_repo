@@ -91,10 +91,10 @@ def plot_per_period(colors_dic: dict, df: pd.DataFrame, col_names: list[str], fi
     """
     dataframes = {}
     pp = PdfPages(filename)
-    for sampleIdx in sorted(df.sample_idx.unique()):
+    for sampleIdx in sorted(df.image_idx.unique()):
         if(int(sampleIdx[1:]) < 6 or int(sampleIdx[1:]) > 9):
             continue # based on the box plots, we want sample idx within [6, 9]
-        curr_df = df[df.sample_idx == sampleIdx]
+        curr_df = df[df.image_idx == sampleIdx]
         fig, plotting_df = get_fig_seperability_coef(coef_function,colors_dic, curr_df, col_names, title=(title +' | ' + str(sampleIdx)))
         dataframes[sampleIdx] = (plotting_df)
         if(type(fig) == type(None)):

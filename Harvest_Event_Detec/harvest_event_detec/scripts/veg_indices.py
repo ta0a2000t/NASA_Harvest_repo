@@ -6,7 +6,7 @@ import math
 from scripts import utilities
 
 NUM_OF_3WEEK_IMGS = 17 #[0 - 16]
-def Get_SORTED_SAMPLE_INDICES():
+def Get_SORTED_IMAGE_INDICES():
     return ['i' + str(i) for i in range(NUM_OF_3WEEK_IMGS)]
 
 
@@ -104,11 +104,8 @@ def add_veg_indices(df:pd.DataFrame) -> list([str]):
     df.loc[:, name] = 2.5 * ((B8 - B4) / (B8 + 6 * B4 - 7.5 * B2 + 1))
     addedColNames.append(name)
 
-
     #####
     # unused source: https://www.indexdatabase.de/db/is.php?sensor_id=96
-
-
 
     # NDTI=(R1610−R2200)/(R1610+R2200)
     name = 'NDTI'
@@ -142,7 +139,6 @@ def add_veg_indices(df:pd.DataFrame) -> list([str]):
     df.loc[:, name] =  ((B11 + B4) - (B8 + B2)) / ((B11 + B4) + (B8 + B2))
     addedColNames.append(name)
 
-
     #NDWI (Sentinel 2) = (B3 – B8) / (B3 + B8)
     name = 'NDWI'
     df.loc[:, name] =  (B3 - B8) / (B3 + B8)
@@ -157,19 +153,16 @@ def add_veg_indices(df:pd.DataFrame) -> list([str]):
     return addedColNames # aka VEG_INDICES_NAMES
 
     
-def get_added_veg_diff(df, VEG_INDICES_NAMES)->pd.DataFrame:
-    utilities.sort_by_points_images(df)
-    
-    # sample 1-16
-    
+def get_added_veg_diff(df, VEG_INDICES_NAMES)->pd.DataFrame:    
     curr_veg_idx_df = df
 
     curr_indices = np.unique(curr_veg_idx_df.image_idx)
     
     df_list = []
     for i in range(1, NUM_OF_3WEEK_IMGS):
-        image_idx = Get_SORTED_SAMPLE_INDICES()[i]
-        prev_image_idx = Get_SORTED_SAMPLE_INDICES()[i - 1]
+        image_idx = Get_SORTED_IMAGE_INDICES()[i]
+        prev_image_idx = Get_SORTED_IMAGE_INDICES()[i - 1]
+
 
         if(image_idx in curr_indices):
             curr_idx_df = curr_veg_idx_df[curr_veg_idx_df["image_idx"] == image_idx]
@@ -194,13 +187,12 @@ def get_added_veg_diff(df, VEG_INDICES_NAMES)->pd.DataFrame:
                     diff_df.rename(columns = {prev_name : prev_name + "_diff"}, inplace = True)
                 curr_idx_df = pd.concat([curr_idx_df, diff_df], axis=1)
 
-                
                 df_list.append(curr_idx_df)
                 
-    veg_diff_names = [word + "_diff" for word in VEG_INDICES_NAMES]
-    print('(not in place), created :', veg_diff_names)
+    VEG_DIFF_NAMES = [word + "_diff" for word in VEG_INDICES_NAMES]
+    print('(not in place), created :', VEG_DIFF_NAMES)
 
-    return pd.concat(df_list, axis=0), veg_diff_names   
+    return pd.concat(df_list, axis=0), VEG_DIFF_NAMES   
 
 
 

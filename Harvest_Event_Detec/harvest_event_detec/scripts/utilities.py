@@ -50,13 +50,26 @@ def saveFigsAsPDF(figs:list([matplotlib.figure.Figure]), filename:str):
     pp.close()
     print(filename,"  saved!")
 
-def sort_by_points_images(df:pd.DataFrame) -> None:
-    df['pt_idx'] = df.point_idx.apply(lambda x: int(x[1:]))
-    df['img_idx'] = df.image_idx.apply(lambda x: int(x[1:]))
-    df = df.sort_values(by=['pt_idx'], ascending=True)
-    df = df.sort_values(by=['img_idx'], ascending=True)
-    # sorted now
+def sort_by_points(df: pd.DataFrame) -> None:
+    df['temp'] = df.point_idx.apply(lambda x: int(x[1:]))
+    df.sort_values(by=['temp'], ascending=True, inplace=True)
+    df.drop(["temp"], axis=1, inplace=True)
+
     
+def sort_by_images(df: pd.DataFrame) -> None:
+    df['temp'] = df.point_idx.apply(lambda x: int(x[1:]))
+    df.sort_values(by=['temp'],ascending=True, inplace=True)
+    df.drop(["temp"], axis=1, inplace=True)
+
+def sort_by_points_images(df:pd.DataFrame) -> None:
+    sort_by_points(df)
+    sort_by_images(df)
+
+def get_unique_sorted_image_idx(df: pd.DataFrame) -> list([str]):
+    return sorted(np.unique(df.image_idx), key=lambda x: int(x[1:]))
+
+def get_unique_sorted_point_idx(df: pd.DataFrame) -> list([str]):
+    return sorted(np.unique(df.point_idx), key=lambda x: int(x[1:]))
 
 # TODO add differences between other metrics too.
 # TODO normalize
@@ -87,6 +100,9 @@ def stretch_cols(df:pd.DataFrame, NUMERIC_COLS: list[str])->pd.DataFrame:
     return stretch_numeric_df
 
 def get_rm_outlier_standarize(df:pd.DataFrame, NUMERIC_COLS: list[str], standarize:bool=True, rm_outliers:bool=True)->pd.DataFrame:
+    """
+        For each 3-week image, standarize each column, after removing outliers.
+    """
     res_df = None
     for image_idx in df.image_idx.unique():
         curr_df = df[df.image_idx == image_idx]
@@ -238,3 +254,20 @@ def get_classes_colors(NUMERIC_COLS:list([str]))-> dict:
         name = names[i]
         dic[name] = colors[i]
     return dic
+
+
+def get_drop_after_harvest(df: pd.DataFrame) -> pd.DataFrame:
+    
+    df_list = []
+    for point_idx in get_unique_sorted_point_idx(df):
+        curr_point_df = df[df["point_idx"] == point_idx]
+        row_df_list = []
+        for image_idx in get_unique_sorted_image_idx(curr_point_df):
+            row_df = curr_point_df[curr_point_df.image_idx == image_idx]
+            row_df_list.append(row_df)
+            if(row_df.har_evnt.to_numpy()[0]):
+                break
+        df_list.append(pd.concat(row_df_list))
+    return pd.concat(df_list)
+            
+            
