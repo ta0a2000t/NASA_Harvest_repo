@@ -152,9 +152,11 @@ def add_veg_indices(df:pd.DataFrame) -> list([str]):
     print('Added: ', addedColNames)
     return addedColNames # aka VEG_INDICES_NAMES
 
+
     
-def get_added_veg_diff(df, VEG_INDICES_NAMES)->pd.DataFrame:    
+def get_added_veg_prev_and_diff(df:pd.DataFrame, VEG_INDICES_NAMES)->pd.DataFrame:    
     curr_veg_idx_df = df
+    PREV_NAMES = [ word + "_prev" for word in VEG_INDICES_NAMES]
 
     curr_indices = np.unique(curr_veg_idx_df.image_idx)
     
@@ -166,33 +168,37 @@ def get_added_veg_diff(df, VEG_INDICES_NAMES)->pd.DataFrame:
 
         if(image_idx in curr_indices):
             curr_idx_df = curr_veg_idx_df[curr_veg_idx_df["image_idx"] == image_idx]
-
+            curr_idx_df["INDEX"] = curr_idx_df["point_idx"]
+            curr_idx_df = curr_idx_df.set_index("INDEX")
+            
             if (prev_image_idx in curr_indices):
-                prev_idx_df = curr_veg_idx_df[curr_veg_idx_df["image_idx"] == prev_image_idx]    
-                for prev_name in prev_idx_df.columns[:]:
-                    if(prev_name == "point_idx"):
-                        continue
-                    prev_idx_df.rename(columns = {prev_name : "prev_"+ prev_name}, inplace = True)
+                prev_idx_df = curr_veg_idx_df[curr_veg_idx_df["image_idx"] == prev_image_idx]
+                prev_idx_df["INDEX"] = prev_idx_df["point_idx"]
+                prev_idx_df = prev_idx_df.set_index("INDEX")
                 
-                both_df = pd.merge(prev_idx_df, curr_idx_df, how='inner',left_on=['point_idx'],right_on=['point_idx'])
+                both_df = prev_idx_df.join(curr_idx_df, how="inner", lsuffix="_prev")
                 curr_idx_df = both_df[curr_idx_df.columns]
+                prev_idx_df = both_df[prev_idx_df.columns]
                 
                 a_df = both_df[VEG_INDICES_NAMES]
-                b_df = both_df[["prev_" + word for word in VEG_INDICES_NAMES]]
+                b_df = both_df[PREV_NAMES]
+                curr_idx_df = pd.concat([curr_idx_df, b_df], axis=1)
+
                 for prev_name in b_df.columns[:]:
-                    b_df.rename(columns = {prev_name : prev_name[5:]}, inplace = True)
+                    b_df = b_df.rename(columns = {prev_name : prev_name[:-5]})
                 
-                diff_df = a_df - b_df                
+                diff_df = a_df- b_df              
                 for prev_name in b_df.columns[:]:
                     diff_df.rename(columns = {prev_name : prev_name + "_diff"}, inplace = True)
+                
+                
                 curr_idx_df = pd.concat([curr_idx_df, diff_df], axis=1)
 
                 df_list.append(curr_idx_df)
-                
+    
     VEG_DIFF_NAMES = [word + "_diff" for word in VEG_INDICES_NAMES]
-    print('(not in place), created :', VEG_DIFF_NAMES)
-
-    return pd.concat(df_list, axis=0), VEG_DIFF_NAMES   
+    print('(not in place), created :',  VEG_DIFF_NAMES + PREV_NAMES)
+    return pd.concat(df_list, axis=0).reset_index(), VEG_DIFF_NAMES , PREV_NAMES
 
 
 

@@ -7,6 +7,7 @@ import pandas as pd
 import math
 import scipy
 from scipy.stats import norm
+import geopandas
 
 from sklearn.metrics import mean_absolute_error
 from sklearn.metrics import mean_squared_error
@@ -270,4 +271,46 @@ def get_drop_after_harvest(df: pd.DataFrame) -> pd.DataFrame:
         df_list.append(pd.concat(row_df_list))
     return pd.concat(df_list)
             
-            
+def get_drop_after_finHarDat(df:pd.DataFrame) -> pd.DataFrame:
+    df_list = []
+    for point_idx in get_unique_sorted_point_idx(df):
+        curr_point_df = df[df["point_idx"] == point_idx]
+        row_df_list = []
+        for image_idx in get_unique_sorted_image_idx(curr_point_df):
+            row_df = curr_point_df[curr_point_df.image_idx == image_idx]
+            row_df_list.append(row_df)
+            if(row_df.finHarvDat.to_numpy()[0] < row_df.end_date.to_numpy()[0]):
+                break
+        df_list.append(pd.concat(row_df_list))
+    return pd.concat(df_list)
+
+
+def get_df(file_name, veg_indices, BANDS):
+    
+    # cpied from learning_about-data.ipynb
+    DF = geopandas.read_file(f'../data/{file_name}.geojson')
+    DF.rename(columns = {'is_within_period':'har_evnt'}, inplace = True)
+    NUM_SAMPLES = len(np.unique(DF.image_idx)) - 1
+
+
+    # cpied from learning_about-data.ipynb
+    df = DF.copy()
+    df = df[(df.NDVI) != 0] # drop invalid points
+    VEG_INDICES_NAMES = veg_indices.add_veg_indices(df) + ['NDVI'] 
+    df, VEG_DIFF_NAMES, PREV_VEG_NAMES = veg_indices.get_added_veg_prev_and_diff(df, VEG_INDICES_NAMES)
+    NUMERIC_COLS = BANDS + VEG_INDICES_NAMES + VEG_DIFF_NAMES + PREV_VEG_NAMES
+
+    df = get_drop_after_harvest(df)# drop rows of non-harvest, after a harvest event in a farm ( a point )
+    df = get_drop_after_finHarDat(df)
+
+    # for some reason, around 26 rows have same values for B4 & B5, making MTCI give infinite values
+    df = df.mask(df["MTCI"] == np.inf, np.nan).mask(df["MTCI"] == -np.inf, np.nan).dropna(subset=["MTCI"], axis=0)
+    df = df.mask(df["MTCI_diff"] == np.inf, np.nan).mask(df["MTCI_diff"] == -np.inf, np.nan).dropna(subset=["MTCI_diff"], axis=0)
+
+    df.reset_index(inplace=True)
+
+    print(df.columns, df.shape)
+
+    # For each 3-week image, standarize each column
+    #df = utilities.get_rm_outlier_standarize(df, NUMERIC_COLS, rm_outliers=False)
+    return df, NUMERIC_COLS, NUM_SAMPLES
