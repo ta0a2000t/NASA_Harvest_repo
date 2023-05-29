@@ -14,6 +14,8 @@ from sklearn.metrics import mean_squared_error
 from sklearn.metrics.pairwise import cosine_similarity
 from scipy.spatial.distance import euclidean
 
+import datetime
+
 def rmved_outliers_iqr(arrayIn: np.array, retBools:bool=False):
     """returns a copy of arrayIn where outliers(shown in box plots) are set to nan
 
@@ -284,24 +286,30 @@ def get_drop_after_finHarDat(df:pd.DataFrame) -> pd.DataFrame:
         df_list.append(pd.concat(row_df_list))
     return pd.concat(df_list)
 
-
-def get_df(file_name, veg_indices, BANDS):
+def get_within_dates(df:pd.DataFrame):
+    df = df[(df["start_date"] > datetime.datetime(year=2022, month=5, day=1))]
+    df = df[(df["end_date"] < datetime.datetime(year=2022, month=10, day=1))]
+    return df.reset_index()
+def get_df(DF:pd.DateOffset, groundTruth:bool, veg_indices, BANDS):
     
     # cpied from learning_about-data.ipynb
-    DF = geopandas.read_file(f'../data/{file_name}.geojson')
+    #DF = geopandas.read_file(f'../data/{file_name}.geojson')
     DF.rename(columns = {'is_within_period':'har_evnt'}, inplace = True)
     NUM_SAMPLES = len(np.unique(DF.image_idx)) - 1
-
+    print(DF.shape)
+    DF.drop_duplicates(subset=BANDS, keep="last", inplace=True)
+    print(DF.shape)
+    print(99999999)
 
     # cpied from learning_about-data.ipynb
-    df = DF.copy()
+    df = get_within_dates(DF.copy())
     df = df[(df.NDVI) != 0] # drop invalid points
-    VEG_INDICES_NAMES = veg_indices.add_veg_indices(df) + ['NDVI'] 
+    VEG_INDICES_NAMES = veg_indices.add_veg_indices(df) + ['NDVI']
     df, VEG_DIFF_NAMES, PREV_VEG_NAMES = veg_indices.get_added_veg_prev_and_diff(df, VEG_INDICES_NAMES)
     NUMERIC_COLS = BANDS + VEG_INDICES_NAMES + VEG_DIFF_NAMES + PREV_VEG_NAMES
-
-    df = get_drop_after_harvest(df)# drop rows of non-harvest, after a harvest event in a farm ( a point )
-    df = get_drop_after_finHarDat(df)
+    if not groundTruth:
+        df = get_drop_after_harvest(df)# drop rows of non-harvest, after a harvest event in a farm ( a point )
+        df = get_drop_after_finHarDat(df)
 
     # for some reason, around 26 rows have same values for B4 & B5, making MTCI give infinite values
     df = df.mask(df["MTCI"] == np.inf, np.nan).mask(df["MTCI"] == -np.inf, np.nan).dropna(subset=["MTCI"], axis=0)
